@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 
 export default (buf) => {
   const str = buf.toString();
