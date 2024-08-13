@@ -61,7 +61,9 @@ export default (
   onUpdate,
 ) => {
   assert(prefix.length >= 1);
-  assert(typeof onUpdate === 'function');
+  if (onUpdate) {
+    assert(typeof onUpdate === 'function');
+  }
 
   return () => {
     const routes = {};
@@ -113,7 +115,9 @@ export default (
             },
           };
           process.nextTick(() => {
-            onUpdate(projectItem);
+            if (onUpdate) {
+              onUpdate(projectItem);
+            }
           });
         },
       };
