@@ -6,8 +6,8 @@ dist
 .DS_store
 .env
 _index.mjs
-_index.js
 _temp
+_dist
 
 # Swap
 [._]*.s[a-v][a-z]

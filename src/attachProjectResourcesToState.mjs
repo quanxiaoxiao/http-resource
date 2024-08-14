@@ -6,6 +6,7 @@ import Ajv from 'ajv';
 import shelljs from 'shelljs';
 import _ from 'lodash';
 import { getPathname } from '@quanxiaoxiao/node-utils';
+import readProjectResources from './readProjectResources.mjs';
 
 const codeName = path.basename(url.fileURLToPath(import.meta.url), '.mjs');
 
@@ -57,21 +58,19 @@ export default (state, keyname = 'projectResources') => {
           console.warn(`[${codeName}] \`${projectName}\` project invalid ${JSON.stringify(validate.errors)}`);
           continue;
         }
-        const resourceStoreBasedir = path.join(resourceStorePathname, projectName);
-        if (!shelljs.test('-d', resourceStoreBasedir)) {
-          console.warn(`[${codeName}] create dir \`${resourceStoreBasedir}\``);
-          shelljs.mkdir('-p', resourceStoreBasedir);
-        }
         projectResources[projectName] = {
           ...projectItem,
           name: projectName,
           key: projectItem.key,
           routeList: projectItem.routes,
-          dir: resourceStoreBasedir,
-          resourceDir: path.join(resourceStoreBasedir, '_'),
-          resourceTempDir: path.join(resourceStoreBasedir, '__'),
+          resource: null,
+          metaFileName: '.meta',
+          currentDirName: '__',
+          tempDirName: '_',
+          dir: path.join(resourceStorePathname, projectName),
           title: projectItem.title || '',
         };
+        projectResources[projectName].resource = readProjectResources(projectResources[projectName]);
       }
       state[keyname] = projectResources;
     } catch (error) {

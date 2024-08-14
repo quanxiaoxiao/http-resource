@@ -1,64 +1,37 @@
-import path from 'node:path';
-import fs from 'node:fs';
-import url from 'node:url';
+import createError from 'http-errors';
 import _ from 'lodash';
-import shelljs from 'shelljs';
-import generateFetchActions from '@quanxiaoxiao/fetch-action';
+import { fetchActions } from '@quanxiaoxiao/fetch-action';
 import renderToHtml from './html/renderToHtml.mjs';
-import parseHtml from './html/parseHtml.mjs';
-import { decode } from './utils.mjs';
 
-const codeFileName = path.basename(url.fileURLToPath(import.meta.url), '.mjs');
-
-export default ({
-  list: projectResourceList,
-  cipher: cipherOptions,
-  logger,
-  hosts,
-  onPageRender,
-}) => {
-  return (projectName) => {
-    const routes = {};
-    for (let i = 0; i < projectResourceList.length; i++) {
-      const projectItem = projectResourceList[i];
-      if (projectName && projectName !== projectItem.name) {
-        continue;
-      }
-      const pagePathname = path.resolve(path.join(projectItem.resourceDir, 'index.html'));
-      if (!shelljs.test('-f', pagePathname)) {
-        if (logger) {
-          logger.warn(`[${codeFileName}] \`${projectItem.name}\` config fail \`${pagePathname}\` unexist`);
-        }
-        continue;
-      }
-      if (_.isEmpty(projectItem.routeList)) {
-        if (projectName && logger) {
-          logger.warn(`[${codeFileName}] \`${projectItem.name}\` config fail routeList is empty`);
-        }
-        continue;
-      }
-      const pageInfo = parseHtml(decode(fs.readFileSync(pagePathname), cipherOptions));
-      if (!pageInfo) {
-        if (logger) {
-          logger.warn(`[${codeFileName}] \`${projectItem.name}\` config fail \`${pagePathname}\` parse error`);
-        }
-        continue;
-      }
-      const dataFetch = _.isEmpty(projectItem.api) ? null : generateFetchActions({
-        fetch: projectItem.api,
-      });
-      const handler = {
-        projectName: projectItem.name,
-        pageInfo,
+export default (
+  {
+    list,
+    hosts,
+    onPageRender,
+  },
+  getProject,
+) => {
+  const routes = {};
+  for (let i = 0; i < list.length; i++) {
+    const projectItem = list[i];
+    for (let j = 0; j < projectItem.list.length; j++) {
+      routes[projectItem.list[j]] =  {
         get: async (ctx) => {
-          if (_.isPlainObject(projectItem.data)) {
+          const d = getProject(projectItem.name);
+          if (!d) {
+            throw createError(404);
+          }
+          if (!d.resource.pageInfo) {
+            throw createError(403);
+          }
+          if (_.isPlainObject(d.data)) {
             if (!ctx.state) {
               ctx.state = {};
             }
-            Object.assign(ctx.state, projectItem.data);
+            Object.assign(ctx.state, d.data);
           }
-          if (dataFetch) {
-            const ret = await dataFetch.fetch({
+          if (!_.isEmpty(d.api)) {
+            const ret = await fetchActions(d.api)({
               hosts,
               request: ctx.request,
             });
@@ -69,6 +42,7 @@ export default ({
               Object.assign(ctx.state, ret);
             }
           }
+          const { pageInfo } = d.resource;
           const options = {
             documentAttributeList: [...pageInfo.documentAttributeList],
             bodyAttributeList: [...pageInfo.documentAttributeList],
@@ -77,7 +51,7 @@ export default ({
             linkList: [...pageInfo.linkList],
             metaList: [...pageInfo.metaList],
             elemList: [...pageInfo.elemList],
-            title: projectItem.title ?? '',
+            title: d.title ?? '',
           };
           if (ctx.state) {
             options.scriptList.unshift({
@@ -106,17 +80,8 @@ export default ({
           };
         },
       };
-      for (let j = 0; j < projectItem.routeList.length; j++) {
-        const pathname = projectItem.routeList[j];
-        if (routes[pathname]) {
-          if (logger) {
-            logger.warn(`[${codeFileName}] \`${projectItem.name}\` \`${pathname}\` config fail, same path with \`${routes[pathname].projectName}\``);
-          }
-          continue;
-        }
-        routes[pathname] = handler;
-      }
     }
-    return routes;
-  };
+  }
+
+  return routes;
 };
