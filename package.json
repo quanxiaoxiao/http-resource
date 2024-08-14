@@ -1,6 +1,6 @@
 {
   "name": "@quanxiaoxiao/http-resource",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "type": "module",
   "scripts": {
     "test": "node --test"
@@ -26,7 +26,7 @@
     "@quanxiaoxiao/node-utils": "^0.13.0",
     "@quanxiaoxiao/utils": "^0.11.0",
     "ajv": "^8.17.1",
-    "cheerio": "^1.0.0",
+    "cheerio": "^1.0.0-rc.12",
     "http-errors": "^2.0.0",
     "lodash": "^4.17.21",
     "mime": "^4.0.4",

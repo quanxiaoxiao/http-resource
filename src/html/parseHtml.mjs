@@ -51,8 +51,8 @@ export default (buf) => {
     });
 
   return {
-    documentAttributeList: $('html').prop('attributes'),
-    bodyAttributeList: $('html > body').prop('attributes'),
+    documentAttributeList: $('html').prop('attributes') || [],
+    bodyAttributeList: $('html > body').prop('attributes') || [],
     scriptList,
     styleList,
     linkList,
