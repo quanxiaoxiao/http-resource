@@ -31,7 +31,7 @@ export default (
             throw createError(403);
           }
           if (logger) {
-            logger.warn(`\`${projectItem.name}\` will update projectResources...`);
+            logger.warn(`\`project:${projectItem.name}\` will update resources...`);
           }
           const resourceTempDir = path.resolve(projectItem.dir, projectItem.tempDirName);
 
@@ -56,7 +56,7 @@ export default (
           throw createError(403);
         }
         if (logger) {
-          logger.warn(`\`${projectItem.name}\` update projectResources success size:\`${ret.size}\` hash:\`${ret.hash}\``);
+          logger.warn(`\`project:${projectItem.name}\` update resources success, \`size:${ret.size}\` \`hash:${ret.hash}\``);
         }
         ctx.response = {
           data: ret,
@@ -72,17 +72,17 @@ export default (
         });
       },
     },
-    [`${resourceDistPrefix}/:name/(.*)`]: {
+    [`${resourceDistPrefix}/:name{/*path}`]: {
       get: (ctx) => {
         const projectItem = getProject(ctx.request.params.name);
         if (!projectItem) {
           throw createError(404);
         }
-        const resourceItem = projectItem.resource.list.find((d) => d.pathname === ctx.request.params[0]);
+        const resourceItem = projectItem.resource.list.find((d) => d.pathname === ctx.request.params.path);
         if (!resourceItem) {
           throw createError(404);
         }
-        if (ctx.request.params[0] === 'index.html') {
+        if (ctx.request.params.path === 'index.html') {
           throw createError(403);
         }
         const etag = ctx.request.headers['if-none-match'];
