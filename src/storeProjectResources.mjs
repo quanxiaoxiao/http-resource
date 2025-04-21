@@ -20,11 +20,11 @@ const validate = ajv.compile({
       size: {
         type: 'number',
       },
-      dateTimeCteate: {
+      dateTimeCreate: {
         type: 'number',
       },
     },
-    required: ['hash', 'dateTimeCteate'],
+    required: ['hash', 'dateTimeCreate'],
   },
 });
 
@@ -81,7 +81,7 @@ export default (projectItem, logger) => {
           const obj = {
             hash,
             size: bufList.reduce((acc2, cur) => acc2 + cur.length, 0),
-            dateTimeCteate: Math.round(stats.ctimeMs),
+            dateTimeCreate: Math.round(stats.ctimeMs),
           };
           metaData.push(obj);
         }
@@ -115,7 +115,7 @@ export default (projectItem, logger) => {
     metaData.unshift({
       hash,
       size: resourceBlockList.reduce((acc, cur) => acc + cur.length, 0),
-      dateTimeCteate: Date.now(),
+      dateTimeCreate: Date.now(),
     });
   }
 
