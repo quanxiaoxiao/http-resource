@@ -3,14 +3,14 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 
 import { sha256 } from '@quanxiaoxiao/node-utils';
-import { listResources } from '@quanxiaoxiao/resource-curd';
 import mime from 'mime';
 import shelljs from 'shelljs';
 
 import parseHtml from './html/parseHtml.mjs';
+import listResources from './listResources.mjs';
 import { calcHash } from './utils.mjs';
 
-export default async (projectItem) => {
+export default (projectItem) => {
   const resourceCurrentDir = path.resolve(projectItem.dir, projectItem.currentDirName);
   if (!shelljs.test('-d', resourceCurrentDir)) {
     return {
@@ -20,11 +20,10 @@ export default async (projectItem) => {
       list: [],
     };
   }
-  const resourcePathnameList = await listResources(resourceCurrentDir);
+  const resourcePathnameList = listResources(resourceCurrentDir);
   const result = [];
   for (let i = 0; i < resourcePathnameList.length; i++) {
-    const item = resourcePathnameList[i];
-    const resourcePathname = path.join(resourceCurrentDir, item.pathname);
+    const resourcePathname = resourcePathnameList[i];
     const buf = fs.readFileSync(resourcePathname);
     result.push({
       hash: sha256(buf),
@@ -32,7 +31,7 @@ export default async (projectItem) => {
       mime: mime.getType(resourcePathname),
       bufGzip: zlib.gzipSync(buf),
       resourcePathname,
-      pathname: item.pathname.slice(1),
+      pathname: resourcePathname.slice(resourceCurrentDir.length + 1),
     });
   }
   const indexHtml = result.find((d) => d.pathname === 'index.html');

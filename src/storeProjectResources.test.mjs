@@ -7,6 +7,7 @@ import test from 'node:test';
 import { sha256 } from '@quanxiaoxiao/node-utils';
 import shelljs from 'shelljs';
 
+import listResources from './listResources.mjs';
 import storeProjectResources from './storeProjectResources.mjs';
 import { calcHash } from './utils.mjs';
 
@@ -23,22 +24,7 @@ const calcHash2 = (hashList) => {
     .reduce((acc, cur) => sha256(`${acc}${cur}`), '');
 };
 
-const getResources = (pathname) => {
-  const stats = fs.statSync(pathname);
-  if (!stats.isDirectory()) {
-    return [pathname];
-
-  }
-  const list = fs.readdirSync(pathname);
-  const result = [];
-  for (let i = 0; i < list.length; i++) {
-    const name = list[i];
-    result.push(...getResources(path.join(pathname, name)));
-  }
-  return result;
-};
-
-test('storeProjectResources', async () => {
+test('storeProjectResources', () => {
   const projectItem = {
     dir: path.resolve(process.cwd(), '_dist'),
     name: 'quan',
@@ -51,7 +37,7 @@ test('storeProjectResources', async () => {
     shelljs.rm('-rf', projectItem.dir);
   }
   assert(!shelljs.test('-d', projectItem.dir));
-  let ret = await storeProjectResources(projectItem);
+  let ret = storeProjectResources(projectItem);
   assert.equal(ret, null);
   assert(shelljs.test('-d', projectItem.dir));
   assert(shelljs.test('-f', path.resolve(projectItem.dir, projectItem.metaFileName)));
@@ -60,16 +46,16 @@ test('storeProjectResources', async () => {
 
   shelljs.cp('-R', sourceDir, path.resolve(projectItem.dir, projectItem.tempDirName));
   assert(shelljs.test('-d', path.resolve(projectItem.dir, projectItem.tempDirName)));
-  ret = await storeProjectResources(projectItem);
+  ret = storeProjectResources(projectItem);
   assert(!shelljs.test('-d', path.resolve(projectItem.dir, projectItem.tempDirName)));
   assert(shelljs.test('-d', path.resolve(projectItem.dir, projectItem.currentDirName)));
-  assert.equal(ret.hash, calcHash(getResources(sourceDir).map((pathname) => fs.readFileSync(pathname))));
+  assert.equal(ret.hash, calcHash(listResources(sourceDir).map((pathname) => fs.readFileSync(pathname))));
   assert.equal(
-    calcHash(getResources(path.join(projectItem.dir, projectItem.currentDirName)).map((pathname) => fs.readFileSync(pathname))),
-    calcHash(getResources(sourceDir).map((pathname) => fs.readFileSync(pathname))),
+    calcHash(listResources(path.join(projectItem.dir, projectItem.currentDirName)).map((pathname) => fs.readFileSync(pathname))),
+    calcHash(listResources(sourceDir).map((pathname) => fs.readFileSync(pathname))),
   );
 
-  const sourceFilepathList = getResources(sourceDir);
+  const sourceFilepathList = listResources(sourceDir);
   const hashList = [];
   for (let i = 0; i < sourceFilepathList.length; i++) {
     const sourceFilepathname = sourceFilepathList[i];
@@ -88,7 +74,7 @@ test('storeProjectResources', async () => {
   const hash = calcHash2(hashList);
   const resourceStoreDir = path.join(projectItem.dir, hash);
   assert(shelljs.test('-d', resourceStoreDir));
-  const resourcePathnameList = getResources(resourceStoreDir);
+  const resourcePathnameList = listResources(resourceStoreDir);
   const hashList2 = [];
   for (let i = 0; i < sourceFilepathList.length; i++) {
     hashList2.push(sha256(fs.readFileSync(resourcePathnameList[i])));
@@ -100,20 +86,20 @@ test('storeProjectResources', async () => {
 
   assert(!shelljs.test('-d', path.resolve(projectItem.dir, projectItem.tempDirName)));
   shelljs.cp('-R', sourceDir, path.resolve(projectItem.dir, projectItem.tempDirName));
-  await storeProjectResources(projectItem);
+  storeProjectResources(projectItem);
   metaData = JSON.parse(fs.readFileSync(path.join(projectItem.dir, projectItem.metaFileName)));
   assert.equal(metaData.length, 1);
   assert.equal(metaData[0].hash, hash);
   assert(!shelljs.test('-d', path.resolve(projectItem.dir, projectItem.tempDirName)));
   shelljs.cp('-R', path.join(process.cwd(), 'node_modules'), path.resolve(projectItem.dir, projectItem.tempDirName));
-  await storeProjectResources(projectItem);
+  storeProjectResources(projectItem);
   metaData = JSON.parse(fs.readFileSync(path.join(projectItem.dir, projectItem.metaFileName)));
   assert.equal(metaData.length, 2);
   assert(metaData[0].hash !== metaData[1].hash);
-  const modules = getResources(path.resolve(projectItem.dir, projectItem.currentDirName));
+  const modules = listResources(path.resolve(projectItem.dir, projectItem.currentDirName));
   assert(modules.length > 0);
   assert.equal(
     modules.length,
-    getResources(path.join(process.cwd(), 'node_modules')).length,
+    listResources(path.join(process.cwd(), 'node_modules')).length,
   );
 });

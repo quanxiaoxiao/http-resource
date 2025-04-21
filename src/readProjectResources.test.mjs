@@ -8,8 +8,8 @@ import listResources from './listResources.mjs';
 import readProjectResources from './readProjectResources.mjs';
 import { calcHash } from './utils.mjs';
 
-test('readProjectResources', async () => {
-  let ret = await readProjectResources({
+test('readProjectResources', () => {
+  let ret = readProjectResources({
     name: 'quan',
     dir: process.cwd(),
     currentDirName: 'src',
@@ -27,7 +27,7 @@ test('readProjectResources', async () => {
     calcHash(resourceList.map((pathname) => fs.readFileSync(pathname))),
   );
 
-  ret = await readProjectResources({
+  ret = readProjectResources({
     name: 'quan',
     dir: process.cwd(),
     currentDirName: 'srcsss',
