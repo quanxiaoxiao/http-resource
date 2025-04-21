@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { listResources } from '@quanxiaoxiao/resource-curd';
 import Ajv from 'ajv';
 import shelljs from 'shelljs';
 
+import listResources from './listResources.mjs';
 import { calcHash } from './utils.mjs';
 
 const ajv = new Ajv();
@@ -28,7 +28,7 @@ const validate = ajv.compile({
   },
 });
 
-export default async (projectItem, logger) => {
+export default (projectItem, logger) => {
   const metaPathname = path.resolve(projectItem.dir, projectItem.metaFileName);
   const resourceTempDir = path.resolve(projectItem.dir, projectItem.tempDirName);
   const resourceCurrentDir = path.resolve(projectItem.dir, projectItem.currentDirName);
@@ -56,11 +56,39 @@ export default async (projectItem, logger) => {
       } else {
         console.warn(`parse file at ${metaPathname} fail \`${error.message}\``);
       }
-      fs.writeFileSync(metaPathname, JSON.stringify([]));
     }
-  } else {
-    fs.writeFileSync(metaPathname, JSON.stringify([]));
   }
+
+  const dirList = fs.readdirSync(projectItem.dir).filter((name) => {
+    const pathname = path.join(path.join(projectItem.dir, name));
+    if (pathname === resourceTempDir || pathname === resourceCurrentDir) {
+      return false;
+    }
+    const stats = fs.statSync(pathname);
+    return stats.isDirectory();
+  });
+
+  for (let i = 0; i < dirList.length; i++) {
+    const hash = dirList[i];
+    if (metaData.find((d) => d.hash !== hash)) {
+      const pathname = path.join(projectItem.dir, hash);
+      const pathnameList = listResources(pathname);
+      if (pathnameList.length > 0) {
+        const bufList = pathnameList.map((name) => fs.readFileSync(name));
+        const h = calcHash(bufList);
+        if (h === hash) {
+          const stats = fs.statSync(pathname);
+          const obj = {
+            hash,
+            size: bufList.reduce((acc2, cur) => acc2 + cur.length, 0),
+            dateTimeCteate: Math.round(stats.ctimeMs),
+          };
+          metaData.push(obj);
+        }
+      }
+    }
+  }
+  fs.writeFileSync(metaPathname, JSON.stringify(metaData));
 
   if (!shelljs.test('-d', resourceTempDir)) {
     if (logger && logger.warn) {
@@ -69,17 +97,16 @@ export default async (projectItem, logger) => {
     return null;
   }
 
-  const filePathnameList = await listResources(resourceTempDir);
-  const resourceBlockList = filePathnameList.map((d) => fs.readFileSync(path.join(resourceTempDir, d.pathname)));
+  const filePathnameList = listResources(resourceTempDir);
+  const resourceBlockList = filePathnameList.map((d) => fs.readFileSync(d));
   const hash = calcHash(resourceBlockList);
   const targetDir = path.join(projectItem.dir, hash);
 
   if (!shelljs.test('-d', targetDir)) {
     shelljs.mkdir('-p', targetDir);
     for (let i = 0; i < filePathnameList.length; i++) {
-      const item = filePathnameList[i];
-      const resourcePathname = path.join(resourceTempDir, item.pathname);
-      const targetFilePathname = path.join(projectItem.dir, hash, item.pathname);
+      const resourcePathname = filePathnameList[i];
+      const targetFilePathname = path.join(projectItem.dir, hash, resourcePathname.slice(resourceTempDir.length));
       if (!shelljs.test('-d', path.dirname(targetFilePathname))) {
         shelljs.mkdir('-p', path.dirname(targetFilePathname));
       }
@@ -96,9 +123,8 @@ export default async (projectItem, logger) => {
     shelljs.rm('-rf', resourceCurrentDir);
   }
   for (let i = 0; i < filePathnameList.length; i++) {
-    const item = filePathnameList[i];
-    const resourcePathname = path.join(resourceTempDir, item.pathname);
-    const targetFilePathname = path.join(resourceCurrentDir, item.pathname);
+    const resourcePathname = filePathnameList[i];
+    const targetFilePathname = path.join(resourceCurrentDir, resourcePathname.slice(resourceTempDir.length));
     if (!shelljs.test('-d', path.dirname(targetFilePathname))) {
       shelljs.mkdir('-p', path.dirname(targetFilePathname));
     }
