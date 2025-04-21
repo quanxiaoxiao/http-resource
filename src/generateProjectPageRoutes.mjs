@@ -22,6 +22,7 @@ export default (
             throw createError(404);
           }
           if (!d.resource.pageInfo) {
+            console.warn(`\`project:${d.name}\` pageInfo is unconfig`);
             throw createError(403);
           }
           if (_.isPlainObject(d.data)) {
