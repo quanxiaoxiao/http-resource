@@ -70,7 +70,7 @@ export default (projectItem, logger) => {
 
   for (let i = 0; i < dirList.length; i++) {
     const hash = dirList[i];
-    if (metaData.find((d) => d.hash !== hash)) {
+    if (!metaData.find((d) => d.hash !== hash)) {
       const pathname = path.join(projectItem.dir, hash);
       const pathnameList = listResources(pathname);
       if (pathnameList.length > 0) {

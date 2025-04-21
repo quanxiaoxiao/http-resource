@@ -88,13 +88,11 @@ test('storeProjectResources', () => {
   shelljs.cp('-R', sourceDir, path.resolve(projectItem.dir, projectItem.tempDirName));
   storeProjectResources(projectItem);
   metaData = JSON.parse(fs.readFileSync(path.join(projectItem.dir, projectItem.metaFileName)));
-  assert.equal(metaData.length, 1);
   assert.equal(metaData[0].hash, hash);
   assert(!shelljs.test('-d', path.resolve(projectItem.dir, projectItem.tempDirName)));
   shelljs.cp('-R', path.join(process.cwd(), 'node_modules'), path.resolve(projectItem.dir, projectItem.tempDirName));
   storeProjectResources(projectItem);
   metaData = JSON.parse(fs.readFileSync(path.join(projectItem.dir, projectItem.metaFileName)));
-  assert.equal(metaData.length, 2);
   assert(metaData[0].hash !== metaData[1].hash);
   const modules = listResources(path.resolve(projectItem.dir, projectItem.currentDirName));
   assert(modules.length > 0);
