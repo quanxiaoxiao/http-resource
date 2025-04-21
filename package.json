@@ -1,6 +1,6 @@
 {
   "name": "@quanxiaoxiao/http-resource",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "type": "module",
   "scripts": {
     "test": "node --test src"
@@ -25,7 +25,6 @@
   "dependencies": {
     "@quanxiaoxiao/fetch-action": "^0.19.0",
     "@quanxiaoxiao/node-utils": "^0.16.0",
-    "@quanxiaoxiao/resource-curd": "^0.7.0",
     "@quanxiaoxiao/utils": "^0.17.0",
     "ajv": "^8.17.1",
     "cheerio": "^1.0.0-rc.12",

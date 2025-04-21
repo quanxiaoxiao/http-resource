@@ -4,11 +4,11 @@ import url from 'node:url';
 import zlib from 'node:zlib';
 
 import { sha256 } from '@quanxiaoxiao/node-utils';
-import { listSubdirectories } from '@quanxiaoxiao/resource-curd';
 import createError from 'http-errors';
 import mime from 'mime';
 import shelljs from 'shelljs';
 
+import listResources from './listResources.mjs';
 import { decode } from './utils.mjs';
 
 const codeFileName = path.basename(url.fileURLToPath(import.meta.url), '.mjs');
@@ -31,7 +31,7 @@ export default ({
         }
         continue;
       }
-      const filePathnameList = listSubdirectories(projectItem.resourceDir);
+      const filePathnameList = listResources(projectItem.resourceDir);
       const resources = {};
       for (let j = 0; j < filePathnameList.length; j++) {
         const filePathname = filePathnameList[j];
