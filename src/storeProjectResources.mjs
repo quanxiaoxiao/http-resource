@@ -1,8 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
+
+import { listResources } from '@quanxiaoxiao/resource-curd';
 import Ajv from 'ajv';
 import shelljs from 'shelljs';
-import { readFileList } from '@quanxiaoxiao/node-utils';
+
 import { calcHash } from './utils.mjs';
 
 const ajv = new Ajv();
@@ -26,7 +28,7 @@ const validate = ajv.compile({
   },
 });
 
-export default (projectItem, logger) => {
+export default async (projectItem, logger) => {
   const metaPathname = path.resolve(projectItem.dir, projectItem.metaFileName);
   const resourceTempDir = path.resolve(projectItem.dir, projectItem.tempDirName);
   const resourceCurrentDir = path.resolve(projectItem.dir, projectItem.currentDirName);
@@ -67,17 +69,17 @@ export default (projectItem, logger) => {
     return null;
   }
 
-  const filePathnameList = readFileList(resourceTempDir);
-  const resourceBlockList = filePathnameList.map((pathname) => fs.readFileSync(pathname));
+  const filePathnameList = await listResources(resourceTempDir);
+  const resourceBlockList = filePathnameList.map((d) => fs.readFileSync(path.join(resourceTempDir, d.pathname)));
   const hash = calcHash(resourceBlockList);
   const targetDir = path.join(projectItem.dir, hash);
 
   if (!shelljs.test('-d', targetDir)) {
     shelljs.mkdir('-p', targetDir);
     for (let i = 0; i < filePathnameList.length; i++) {
-      const resourcePathname = filePathnameList[i];
-      const filename = resourcePathname.slice(resourceTempDir.length + 1);
-      const targetFilePathname = path.join(projectItem.dir, hash, filename);
+      const item = filePathnameList[i];
+      const resourcePathname = path.join(resourceTempDir, item.pathname);
+      const targetFilePathname = path.join(projectItem.dir, hash, item.pathname);
       if (!shelljs.test('-d', path.dirname(targetFilePathname))) {
         shelljs.mkdir('-p', path.dirname(targetFilePathname));
       }
@@ -93,11 +95,10 @@ export default (projectItem, logger) => {
   if (shelljs.test('-d', resourceCurrentDir)) {
     shelljs.rm('-rf', resourceCurrentDir);
   }
-
   for (let i = 0; i < filePathnameList.length; i++) {
-    const resourcePathname = filePathnameList[i];
-    const filename = resourcePathname.slice(resourceTempDir.length + 1);
-    const targetFilePathname = path.join(resourceCurrentDir, filename);
+    const item = filePathnameList[i];
+    const resourcePathname = path.join(resourceTempDir, item.pathname);
+    const targetFilePathname = path.join(resourceCurrentDir, item.pathname);
     if (!shelljs.test('-d', path.dirname(targetFilePathname))) {
       shelljs.mkdir('-p', path.dirname(targetFilePathname));
     }

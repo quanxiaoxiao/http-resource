@@ -3,7 +3,7 @@
   "version": "0.11.0",
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test src"
   },
   "main": "./src/index.mjs",
   "exports": {
@@ -14,17 +14,19 @@
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
-    "@eslint/js": "^9.3.0",
-    "eslint": "^9.3.0",
-    "globals": "^15.3.0"
+    "@eslint/js": "^9.25.0",
+    "eslint": "^9.25.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "globals": "^16.0.0"
   },
   "engines": {
     "node": ">= 20.0.0"
   },
   "dependencies": {
-    "@quanxiaoxiao/fetch-action": "^0.12.0",
-    "@quanxiaoxiao/node-utils": "^0.14.0",
-    "@quanxiaoxiao/utils": "^0.12.0",
+    "@quanxiaoxiao/fetch-action": "^0.19.0",
+    "@quanxiaoxiao/node-utils": "^0.16.0",
+    "@quanxiaoxiao/resource-curd": "^0.7.0",
+    "@quanxiaoxiao/utils": "^0.17.0",
     "ajv": "^8.17.1",
     "cheerio": "^1.0.0-rc.12",
     "http-errors": "^2.0.0",

@@ -1,13 +1,29 @@
-import test from 'node:test';
+import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import assert from 'node:assert';
-import { readFileList } from '@quanxiaoxiao/node-utils';
-import readProjectResources from './readProjectResources.mjs';
+import test from 'node:test';
 
-test('readProjectResources', () => {
-  let ret = readProjectResources({
+import readProjectResources from './readProjectResources.mjs';
+import { calcHash } from './utils.mjs';
+
+const getResources = (pathname) => {
+  const stats = fs.statSync(pathname);
+  if (!stats.isDirectory()) {
+    return [pathname];
+
+  }
+  const list = fs.readdirSync(pathname);
+  const result = [];
+  for (let i = 0; i < list.length; i++) {
+    const name = list[i];
+    result.push(...getResources(path.join(pathname, name)));
+  }
+  return result;
+};
+
+test('readProjectResources', async () => {
+  let ret = await readProjectResources({
     name: 'quan',
     dir: process.cwd(),
     currentDirName: 'src',
@@ -15,12 +31,17 @@ test('readProjectResources', () => {
 
   assert(ret.size > 0);
 
+  const resourceList = getResources(path.resolve(process.cwd(), 'src'));
+  const size = resourceList.reduce((acc, cur) => acc + fs.readFileSync(cur).length, 0);
+
+  assert.equal(size, ret.size);
+
   assert.equal(
-    ret.size,
-    readFileList(path.resolve(process.cwd(), 'src'))
-      .reduce((acc, pathname) => acc + fs.readFileSync(pathname).length, 0),
+    ret.hash,
+    calcHash(resourceList.map((pathname) => fs.readFileSync(pathname))),
   );
-  ret = readProjectResources({
+
+  ret = await readProjectResources({
     name: 'quan',
     dir: process.cwd(),
     currentDirName: 'srcsss',

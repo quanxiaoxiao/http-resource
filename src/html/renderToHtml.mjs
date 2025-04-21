@@ -1,4 +1,5 @@
 import _ from 'lodash';
+
 import generateHtmlTag from './generateHtmlTag.mjs';
 
 const joinSpaceLine = (size, str = '') => {
@@ -39,13 +40,13 @@ export default ({
   const head = [];
   const body = [];
   result.push('<!DOCTYPE html>');
-  result.push(generateHtmlTag('html', { attributes: documentAttributeList}));
+  result.push(generateHtmlTag('html', { attributes: documentAttributeList }));
   head.push(generateHtmlTag('head'));
   if (title) {
     head.push([generateHtmlTag('title', { content: title })]);
   }
   if (!_.isEmpty(metaList)) {
-    head.push(metaList.map((item) => generateHtmlTag('meta', { attributes: item.attributes, })));
+    head.push(metaList.map((item) => generateHtmlTag('meta', { attributes: item.attributes })));
   }
   if (!_.isEmpty(styleList)) {
     head.push(styleList.map((item) => generateHtmlTag('style', {

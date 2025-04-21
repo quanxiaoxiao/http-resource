@@ -1,11 +1,13 @@
-import fs from 'node:fs';
 import assert from 'node:assert';
-import url from 'node:url';
+import fs from 'node:fs';
 import path from 'node:path';
-import Ajv from 'ajv';
-import shelljs from 'shelljs';
-import _ from 'lodash';
+import url from 'node:url';
+
 import { getPathname } from '@quanxiaoxiao/node-utils';
+import Ajv from 'ajv';
+import _ from 'lodash';
+import shelljs from 'shelljs';
+
 import readProjectResources from './readProjectResources.mjs';
 
 const codeName = path.basename(url.fileURLToPath(import.meta.url), '.mjs');

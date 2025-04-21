@@ -1,13 +1,16 @@
-import path from 'node:path';
-import fs from 'node:fs';
-import process from 'node:process';
 import assert from 'node:assert';
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
 import test from 'node:test';
-import shelljs from 'shelljs';
-import { readFileList, sha256 } from '@quanxiaoxiao/node-utils';
-import storeProjectResources from './storeProjectResources.mjs';
 
-const calcHash = (hashList) => {
+import { sha256 } from '@quanxiaoxiao/node-utils';
+import shelljs from 'shelljs';
+
+import storeProjectResources from './storeProjectResources.mjs';
+import { calcHash } from './utils.mjs';
+
+const calcHash2 = (hashList) => {
   return [...hashList].sort((a, b) => {
     if (a === b) {
       return 0;
@@ -17,10 +20,25 @@ const calcHash = (hashList) => {
     }
     return -1;
   })
-  .reduce((acc, cur) => sha256(`${acc}${cur}`), '');
+    .reduce((acc, cur) => sha256(`${acc}${cur}`), '');
 };
 
-test('storeProjectResources', () => {
+const getResources = (pathname) => {
+  const stats = fs.statSync(pathname);
+  if (!stats.isDirectory()) {
+    return [pathname];
+
+  }
+  const list = fs.readdirSync(pathname);
+  const result = [];
+  for (let i = 0; i < list.length; i++) {
+    const name = list[i];
+    result.push(...getResources(path.join(pathname, name)));
+  }
+  return result;
+};
+
+test('storeProjectResources', async () => {
   const projectItem = {
     dir: path.resolve(process.cwd(), '_dist'),
     name: 'quan',
@@ -33,7 +51,8 @@ test('storeProjectResources', () => {
     shelljs.rm('-rf', projectItem.dir);
   }
   assert(!shelljs.test('-d', projectItem.dir));
-  storeProjectResources(projectItem);
+  let ret = await storeProjectResources(projectItem);
+  assert.equal(ret, null);
   assert(shelljs.test('-d', projectItem.dir));
   assert(shelljs.test('-f', path.resolve(projectItem.dir, projectItem.metaFileName)));
   assert(!shelljs.test('-d', path.resolve(projectItem.dir, projectItem.currentDirName)));
@@ -41,11 +60,16 @@ test('storeProjectResources', () => {
 
   shelljs.cp('-R', sourceDir, path.resolve(projectItem.dir, projectItem.tempDirName));
   assert(shelljs.test('-d', path.resolve(projectItem.dir, projectItem.tempDirName)));
-  storeProjectResources(projectItem);
+  ret = await storeProjectResources(projectItem);
   assert(!shelljs.test('-d', path.resolve(projectItem.dir, projectItem.tempDirName)));
   assert(shelljs.test('-d', path.resolve(projectItem.dir, projectItem.currentDirName)));
+  assert.equal(ret.hash, calcHash(getResources(sourceDir).map((pathname) => fs.readFileSync(pathname))));
+  assert.equal(
+    calcHash(getResources(path.join(projectItem.dir, projectItem.currentDirName)).map((pathname) => fs.readFileSync(pathname))),
+    calcHash(getResources(sourceDir).map((pathname) => fs.readFileSync(pathname))),
+  );
 
-  const sourceFilepathList = readFileList(sourceDir);
+  const sourceFilepathList = getResources(sourceDir);
   const hashList = [];
   for (let i = 0; i < sourceFilepathList.length; i++) {
     const sourceFilepathname = sourceFilepathList[i];
@@ -61,35 +85,35 @@ test('storeProjectResources', () => {
     hashList.push(sha256(sourceBuf));
   }
   assert(hashList.length > 0);
-  const hash = calcHash(hashList);
+  const hash = calcHash2(hashList);
   const resourceStoreDir = path.join(projectItem.dir, hash);
   assert(shelljs.test('-d', resourceStoreDir));
-  const resourcePathnameList = readFileList(resourceStoreDir);
+  const resourcePathnameList = getResources(resourceStoreDir);
   const hashList2 = [];
   for (let i = 0; i < sourceFilepathList.length; i++) {
     hashList2.push(sha256(fs.readFileSync(resourcePathnameList[i])));
   }
-  assert.equal(calcHash(hashList2), hash);
+  assert.equal(calcHash2(hashList2), hash);
   let metaData = JSON.parse(fs.readFileSync(path.join(projectItem.dir, projectItem.metaFileName)));
   assert.equal(metaData.length, 1);
   assert.equal(metaData[0].hash, hash);
 
   assert(!shelljs.test('-d', path.resolve(projectItem.dir, projectItem.tempDirName)));
   shelljs.cp('-R', sourceDir, path.resolve(projectItem.dir, projectItem.tempDirName));
-  storeProjectResources(projectItem);
+  await storeProjectResources(projectItem);
   metaData = JSON.parse(fs.readFileSync(path.join(projectItem.dir, projectItem.metaFileName)));
   assert.equal(metaData.length, 1);
   assert.equal(metaData[0].hash, hash);
   assert(!shelljs.test('-d', path.resolve(projectItem.dir, projectItem.tempDirName)));
   shelljs.cp('-R', path.join(process.cwd(), 'node_modules'), path.resolve(projectItem.dir, projectItem.tempDirName));
-  storeProjectResources(projectItem);
+  await storeProjectResources(projectItem);
   metaData = JSON.parse(fs.readFileSync(path.join(projectItem.dir, projectItem.metaFileName)));
   assert.equal(metaData.length, 2);
   assert(metaData[0].hash !== metaData[1].hash);
-  const modules  = readFileList(path.resolve(projectItem.dir, projectItem.currentDirName));
+  const modules = getResources(path.resolve(projectItem.dir, projectItem.currentDirName));
   assert(modules.length > 0);
   assert.equal(
     modules.length,
-    readFileList(path.join(process.cwd(), 'node_modules')).length,
+    getResources(path.join(process.cwd(), 'node_modules')).length,
   );
 });

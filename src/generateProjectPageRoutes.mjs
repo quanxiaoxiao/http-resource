@@ -1,6 +1,7 @@
+import { fetchActions } from '@quanxiaoxiao/fetch-action';
 import createError from 'http-errors';
 import _ from 'lodash';
-import { fetchActions } from '@quanxiaoxiao/fetch-action';
+
 import renderToHtml from './html/renderToHtml.mjs';
 
 export default (
@@ -15,7 +16,7 @@ export default (
   for (let i = 0; i < list.length; i++) {
     const projectItem = list[i];
     for (let j = 0; j < projectItem.list.length; j++) {
-      routes[projectItem.list[j]] =  {
+      routes[projectItem.list[j]] = {
         get: async (ctx) => {
           const d = getProject(projectItem.name);
           if (!d) {

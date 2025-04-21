@@ -1,11 +1,14 @@
-import zlib from 'node:zlib';
+import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
-import fs from 'node:fs';
+import zlib from 'node:zlib';
+
+import { sha256 } from '@quanxiaoxiao/node-utils';
+import { listSubdirectories } from '@quanxiaoxiao/resource-curd';
+import createError from 'http-errors';
 import mime from 'mime';
 import shelljs from 'shelljs';
-import createError from 'http-errors';
-import { readFileList, sha256 } from '@quanxiaoxiao/node-utils';
+
 import { decode } from './utils.mjs';
 
 const codeFileName = path.basename(url.fileURLToPath(import.meta.url), '.mjs');
@@ -28,7 +31,7 @@ export default ({
         }
         continue;
       }
-      const filePathnameList = readFileList(projectItem.resourceDir);
+      const filePathnameList = listSubdirectories(projectItem.resourceDir);
       const resources = {};
       for (let j = 0; j < filePathnameList.length; j++) {
         const filePathname = filePathnameList[j];

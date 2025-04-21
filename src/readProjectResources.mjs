@@ -1,26 +1,30 @@
-import path from 'node:path';
 import fs from 'node:fs';
-import shelljs from 'shelljs';
+import path from 'node:path';
 import zlib from 'node:zlib';
-import mime from 'mime';
-import { readFileList, sha256 } from '@quanxiaoxiao/node-utils';
-import { calcHash } from './utils.mjs';
-import parseHtml from './html/parseHtml.mjs';
 
-export default (projectItem) => {
+import { sha256 } from '@quanxiaoxiao/node-utils';
+import { listResources } from '@quanxiaoxiao/resource-curd';
+import mime from 'mime';
+import shelljs from 'shelljs';
+
+import parseHtml from './html/parseHtml.mjs';
+import { calcHash } from './utils.mjs';
+
+export default async (projectItem) => {
   const resourceCurrentDir = path.resolve(projectItem.dir, projectItem.currentDirName);
   if (!shelljs.test('-d', resourceCurrentDir)) {
-    return  {
+    return {
       hash: null,
       size: 0,
       pageInfo: null,
       list: [],
     };
   }
-  const resourcePathnameList = readFileList(resourceCurrentDir);
+  const resourcePathnameList = await listResources(resourceCurrentDir);
   const result = [];
   for (let i = 0; i < resourcePathnameList.length; i++) {
-    const resourcePathname = resourcePathnameList[i];
+    const item = resourcePathnameList[i];
+    const resourcePathname = path.join(resourceCurrentDir, item.pathname);
     const buf = fs.readFileSync(resourcePathname);
     result.push({
       hash: sha256(buf),
@@ -28,7 +32,7 @@ export default (projectItem) => {
       mime: mime.getType(resourcePathname),
       bufGzip: zlib.gzipSync(buf),
       resourcePathname,
-      pathname: resourcePathname.slice(resourceCurrentDir.length + 1),
+      pathname: item.pathname.slice(1),
     });
   }
   const indexHtml = result.find((d) => d.pathname === 'index.html');

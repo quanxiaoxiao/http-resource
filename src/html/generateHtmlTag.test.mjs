@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import test from 'node:test';
+
 import generateHtmlTag from './generateHtmlTag.mjs';
 
 test('generateHtmlTag', () => {
@@ -9,23 +10,23 @@ test('generateHtmlTag', () => {
     generateHtmlTag('a', {
       content: '',
     }),
-    '<a></a>'
+    '<a></a>',
   );
   assert.equal(
     generateHtmlTag('a', {
       content: null,
     }),
-    '<a></a>'
+    '<a></a>',
   );
   assert.equal(
     generateHtmlTag('head'),
-    '<head>'
+    '<head>',
   );
   assert.equal(
     generateHtmlTag('a', {
       content: 'quan',
     }),
-    '<a>quan</a>'
+    '<a>quan</a>',
   );
   assert.equal(
     generateHtmlTag('a', {
@@ -37,7 +38,7 @@ test('generateHtmlTag', () => {
         },
       ],
     }),
-    `<a data-foo="bar">quan</a>`,
+    '<a data-foo="bar">quan</a>',
   );
   assert.equal(
     generateHtmlTag('a', {
@@ -48,11 +49,11 @@ test('generateHtmlTag', () => {
         },
       ],
     }),
-    `<a data-foo="bar">`,
+    '<a data-foo="bar">',
   );
   assert.equal(
     generateHtmlTag('html', {}),
-    `<html>`,
+    '<html>',
   );
   assert.equal(
     generateHtmlTag('html', {
@@ -63,7 +64,7 @@ test('generateHtmlTag', () => {
         },
       ],
     }),
-    `<html lang="zh">`,
+    '<html lang="zh">',
   );
   assert.equal(
     generateHtmlTag('meta', {
@@ -74,7 +75,7 @@ test('generateHtmlTag', () => {
         },
       ],
     }),
-    `<meta charset="utf-8">`,
+    '<meta charset="utf-8">',
   );
   assert.equal(
     generateHtmlTag('link', {
@@ -93,7 +94,7 @@ test('generateHtmlTag', () => {
         },
       ],
     }),
-    `<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">`,
+    '<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">',
   );
 
   assert.equal(
@@ -110,7 +111,7 @@ test('generateHtmlTag', () => {
         },
       ],
     }),
-    `<script defer="defer" src="/static/taxi/main.js"></script>`,
+    '<script defer="defer" src="/static/taxi/main.js"></script>',
   );
 
   assert.equal(
@@ -127,7 +128,7 @@ test('generateHtmlTag', () => {
         },
       ],
     }),
-    `<style data-emotion="css-global" data-s></style>`,
+    '<style data-emotion="css-global" data-s></style>',
   );
 
   assert.equal(
@@ -144,6 +145,6 @@ test('generateHtmlTag', () => {
         },
       ],
     }),
-    `<style data-emotion="css-global" data-s=""></style>`,
+    '<style data-emotion="css-global" data-s=""></style>',
   );
 });

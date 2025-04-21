@@ -1,9 +1,10 @@
-import test from 'node:test';
 import assert from 'node:assert';
+import test from 'node:test';
+
 import renderToHtml from './renderToHtml.mjs';
 
 test('renderToHtml', () => {
-  let content  = `<!DOCTYPE html>
+  let content = `<!DOCTYPE html>
 <html>
   <head>
   </head>
@@ -11,7 +12,7 @@ test('renderToHtml', () => {
   </body>
 </html>`;
   assert.equal(renderToHtml({}), content);
-  content  = `<!DOCTYPE html>
+  content = `<!DOCTYPE html>
 <html>
   <head>
     <title>aaa</title>
@@ -22,7 +23,7 @@ test('renderToHtml', () => {
   assert.equal(renderToHtml({
     title: 'aaa',
   }), content);
-  content  = `<!DOCTYPE html>
+  content = `<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
@@ -42,7 +43,7 @@ test('renderToHtml', () => {
       },
     ],
   }), content);
-  content  = `<!DOCTYPE html>
+  content = `<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
@@ -76,7 +77,7 @@ test('renderToHtml', () => {
       },
     ],
   }), content);
-  content  = `<!DOCTYPE html>
+  content = `<!DOCTYPE html>
 <html>
   <head>
     <title>bbb</title>
@@ -126,7 +127,7 @@ test('renderToHtml', () => {
       },
     ],
   }), content);
-  content  = `<!DOCTYPE html>
+  content = `<!DOCTYPE html>
 <html lang="zh">
   <head>
     <meta charset="utf-8">
@@ -158,7 +159,7 @@ test('renderToHtml', () => {
       },
     ],
   }), content);
-  content  = `<!DOCTYPE html>
+  content = `<!DOCTYPE html>
 <html lang="zh">
   <head>
     <meta charset="utf-8">
@@ -203,7 +204,7 @@ test('renderToHtml', () => {
     ],
   }), content);
 
-  content  = `<!DOCTYPE html>
+  content = `<!DOCTYPE html>
 <html>
   <head>
   </head>
