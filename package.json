@@ -24,7 +24,6 @@
   },
   "dependencies": {
     "@quanxiaoxiao/fetch-action": "^0.20.0",
-    "@quanxiaoxiao/node-utils": "^0.16.0",
     "@quanxiaoxiao/utils": "^0.17.0",
     "ajv": "^8.17.1",
     "cheerio": "^1.0.0-rc.12",
