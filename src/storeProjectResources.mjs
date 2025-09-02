@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -28,95 +29,128 @@ const validate = ajv.compile({
   },
 });
 
-const ensureDirectoryExists = (dirPath, logger) => {
+const ensureDirectoryExists = (dirPath) => {
   if (!shelljs.test('-d', dirPath)) {
     shelljs.mkdir('-p', dirPath);
-    logger?.warn?.(`Created directory: ${dirPath}`);
   }
 };
 
-export default (projectItem, logger) => {
+const loadMetaData = (metaPathname) => {
+  if (!shelljs.test('-f', metaPathname)) {
+    return [];
+  }
+  try {
+    const content = fs.readFileSync(metaPathname, 'utf8');
+    const data = JSON.parse(content);
+    if (!validate(data)) {
+      throw new Error(`Invalid metadata format: ${JSON.stringify(validate.errors)}`);
+    }
+    return data;
+  } catch (error) {
+    console.warn(`Failed to parse metadata file ${metaPathname}: ${error.message}`);
+    return [];
+  }
+};
+
+const copyFiles = (sourceFiles, sourceDir, targetDir) => {
+  for (const sourceFile of sourceFiles) {
+    const relativePath = sourceFile.slice(sourceDir.length);
+    const targetFile = path.join(targetDir, relativePath);
+    const targetDirPath = path.dirname(targetFile);
+
+    if (!shelljs.test('-d', targetDirPath)) {
+      shelljs.mkdir('-p', targetDirPath);
+    }
+
+    fs.writeFileSync(targetFile, fs.readFileSync(sourceFile));
+  }
+};
+
+const scanAndUpdateMetadata = (
+  projectDir,
+  metaData,
+  resourceTempDir,
+  resourceCurrentDir,
+) => {
+  const dirList = fs.readdirSync(projectDir)
+    .filter((name) => {
+      const fullPath = path.join(path.join(projectDir, name));
+      if (fullPath === resourceTempDir || fullPath === resourceCurrentDir) {
+        return false;
+      }
+      try {
+        const stats = fs.statSync(fullPath);
+        if (!stats.isDirectory()) {
+          return false;
+        }
+        const files = listResources(fullPath);
+        if (files.length === 0) {
+          return false;
+        }
+        const resourceBuffers = files.map((filePath) => fs.readFileSync(filePath));
+        const resourceHash = calcHash(resourceBuffers);
+        return resourceHash === name;
+      } catch {
+        return false;
+      }
+    });
+
+  const updatedMetaData = [...metaData];
+
+  for (const dirname of dirList) {
+    const hash = dirname;
+    if (!updatedMetaData.find((d) => d.hash === hash)) {
+      const dirPath = path.join(projectDir, hash);
+      const fileList = listResources(dirPath);
+      assert(fileList.length > 0);
+      const bufList = fileList.map((filePath) => fs.readFileSync(filePath));
+      const resourceHash = calcHash(bufList);
+      assert(resourceHash === dirname);
+      const stats = fs.statSync(dirPath);
+      updatedMetaData.push({
+        hash,
+        size: bufList.reduce((acc, buf) => acc + buf.length, 0),
+        dateTimeCreate: Math.round(stats.ctimeMs),
+      });
+    }
+  }
+
+  return updatedMetaData;
+};
+
+export default (projectItem) => {
   const metaPathname = path.resolve(projectItem.dir, projectItem.metaFileName);
   const resourceTempDir = path.resolve(projectItem.dir, projectItem.tempDirName);
   const resourceCurrentDir = path.resolve(projectItem.dir, projectItem.currentDirName);
-  const metaData = [];
 
-  ensureDirectoryExists(projectItem.dir, logger);
+  ensureDirectoryExists(projectItem.dir);
 
-  if (shelljs.test('-f', metaPathname)) {
-    try {
-      const ret = JSON.parse(fs.readFileSync(metaPathname));
-      if (!validate(ret)) {
-        throw new Error(`\`${metaPathname}\` ${JSON.stringify(validate.errors)}`);
-      }
-      if (ret.length > 0) {
-        metaData.push(...ret);
-      }
-    } catch (error) {
-      if (logger && logger.warn) {
-        logger.warn(`parse file at ${metaPathname} fail \`${error.message}\``);
-      } else {
-        console.warn(`parse file at ${metaPathname} fail \`${error.message}\``);
-      }
-    }
-  }
+  const originMetaData = loadMetaData(metaPathname);
 
-  const dirList = fs.readdirSync(projectItem.dir).filter((name) => {
-    const pathname = path.join(path.join(projectItem.dir, name));
-    if (pathname === resourceTempDir || pathname === resourceCurrentDir) {
-      return false;
-    }
-    const stats = fs.statSync(pathname);
-    return stats.isDirectory();
-  });
+  const metaData = scanAndUpdateMetadata(projectItem.dir, originMetaData, resourceTempDir, resourceCurrentDir);
 
-  for (let i = 0; i < dirList.length; i++) {
-    const hash = dirList[i];
-    if (!metaData.find((d) => d.hash !== hash)) {
-      const pathname = path.join(projectItem.dir, hash);
-      const pathnameList = listResources(pathname);
-      if (pathnameList.length > 0) {
-        const bufList = pathnameList.map((name) => fs.readFileSync(name));
-        const h = calcHash(bufList);
-        if (h === hash) {
-          const stats = fs.statSync(pathname);
-          const obj = {
-            hash,
-            size: bufList.reduce((acc2, cur) => acc2 + cur.length, 0),
-            dateTimeCreate: Math.round(stats.ctimeMs),
-          };
-          metaData.push(obj);
-        }
-      }
-    }
-  }
-  fs.writeFileSync(metaPathname, JSON.stringify(metaData));
+  fs.writeFileSync(metaPathname, JSON.stringify(metaData, null, 2));
 
   if (!shelljs.test('-d', resourceTempDir)) {
-    if (logger && logger.warn) {
-      logger.warn(`\`${resourceTempDir}\` not exist`);
-    }
+    console.warn(`Temporary directory does not exist: ${resourceTempDir}`);
     return null;
   }
 
-  const filePathnameList = listResources(resourceTempDir);
-  const resourceBlockList = filePathnameList.map((d) => fs.readFileSync(d));
-  const hash = calcHash(resourceBlockList);
-  const targetDir = path.join(projectItem.dir, hash);
+  const tempFiles = listResources(resourceTempDir);
+  if (tempFiles.length === 0) {
+    console.warn(`No files found in temporary directory: ${resourceTempDir}`);
+    return null;
+  }
+  const resourceBuffers = tempFiles.map((filePath) => fs.readFileSync(filePath));
+  const projectResourcesHash = calcHash(resourceBuffers);
+  const targetDir = path.join(projectItem.dir, projectResourcesHash);
 
   if (!shelljs.test('-d', targetDir)) {
     shelljs.mkdir('-p', targetDir);
-    for (let i = 0; i < filePathnameList.length; i++) {
-      const resourcePathname = filePathnameList[i];
-      const targetFilePathname = path.join(projectItem.dir, hash, resourcePathname.slice(resourceTempDir.length));
-      if (!shelljs.test('-d', path.dirname(targetFilePathname))) {
-        shelljs.mkdir('-p', path.dirname(targetFilePathname));
-      }
-      shelljs.cp(resourcePathname, targetFilePathname);
-    }
+    copyFiles(tempFiles, resourceTempDir, targetDir);
     metaData.unshift({
-      hash,
-      size: resourceBlockList.reduce((acc, cur) => acc + cur.length, 0),
+      hash: projectResourcesHash,
+      size: resourceBuffers.reduce((acc, buf) => acc + buf.length, 0),
       dateTimeCreate: Date.now(),
     });
   }
@@ -124,17 +158,12 @@ export default (projectItem, logger) => {
   if (shelljs.test('-d', resourceCurrentDir)) {
     shelljs.rm('-rf', resourceCurrentDir);
   }
-  for (let i = 0; i < filePathnameList.length; i++) {
-    const resourcePathname = filePathnameList[i];
-    const targetFilePathname = path.join(resourceCurrentDir, resourcePathname.slice(resourceTempDir.length));
-    if (!shelljs.test('-d', path.dirname(targetFilePathname))) {
-      shelljs.mkdir('-p', path.dirname(targetFilePathname));
-    }
-    fs.writeFileSync(targetFilePathname, fs.readFileSync(resourcePathname));
-  }
+
+  copyFiles(tempFiles, resourceTempDir, resourceCurrentDir);
+
   shelljs.rm('-rf', resourceTempDir);
 
-  fs.writeFileSync(metaPathname, JSON.stringify(metaData));
+  fs.writeFileSync(metaPathname, JSON.stringify(metaData, null, 2));
 
-  return metaData[0];
+  return metaData[0] || null;
 };
