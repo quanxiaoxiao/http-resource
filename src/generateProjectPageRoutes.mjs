@@ -11,22 +11,22 @@ const createRouteHandler = (
   getProject,
 ) => {
   return async (ctx) => {
-    const d = getProject(projectName);
-    if (!d) {
+    const projectItem = getProject(projectName);
+    if (!projectItem) {
       throw createError(404);
     }
-    if (!d.resource.pageInfo) {
-      console.warn(`\`project:${d.name}\` pageInfo is unconfig`);
+    if (!projectItem.resource.pageInfo) {
+      console.warn(`\`project:${projectItem.name}\` pageInfo is unconfig`);
       throw createError(403);
     }
-    if (_.isPlainObject(d.data)) {
+    if (_.isPlainObject(projectItem.data)) {
       if (!ctx.state) {
         ctx.state = {};
       }
-      Object.assign(ctx.state, d.data);
+      Object.assign(ctx.state, projectItem.data);
     }
-    if (!_.isEmpty(d.api)) {
-      const ret = await fetchActions(d.api)({
+    if (!_.isEmpty(projectItem.api)) {
+      const ret = await fetchActions(projectItem.api)({
         hosts,
         request: ctx.request,
       });
@@ -37,7 +37,7 @@ const createRouteHandler = (
         Object.assign(ctx.state, ret);
       }
     }
-    const { pageInfo } = d.resource;
+    const { pageInfo } = projectItem.resource;
     const options = {
       documentAttributeList: [...pageInfo.documentAttributeList],
       bodyAttributeList: [...pageInfo.documentAttributeList],
@@ -46,7 +46,7 @@ const createRouteHandler = (
       linkList: [...pageInfo.linkList],
       metaList: [...pageInfo.metaList],
       elemList: [...pageInfo.elemList],
-      title: d.title ?? '',
+      title: projectItem.title ?? '',
     };
     if (ctx.state) {
       options.scriptList.unshift({
