@@ -28,18 +28,20 @@ const validate = ajv.compile({
   },
 });
 
+const ensureDirectoryExists = (dirPath, logger) => {
+  if (!shelljs.test('-d', dirPath)) {
+    shelljs.mkdir('-p', dirPath);
+    logger?.warn?.(`Created directory: ${dirPath}`);
+  }
+};
+
 export default (projectItem, logger) => {
   const metaPathname = path.resolve(projectItem.dir, projectItem.metaFileName);
   const resourceTempDir = path.resolve(projectItem.dir, projectItem.tempDirName);
   const resourceCurrentDir = path.resolve(projectItem.dir, projectItem.currentDirName);
   const metaData = [];
 
-  if (!shelljs.test('-d', projectItem.dir)) {
-    shelljs.mkdir('-p', projectItem.dir);
-    if (logger && logger.warn) {
-      logger.warn(`mkdir \`${projectItem.dir}\``);
-    }
-  }
+  ensureDirectoryExists(projectItem.dir, logger);
 
   if (shelljs.test('-f', metaPathname)) {
     try {
