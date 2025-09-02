@@ -7,9 +7,9 @@ import test from 'node:test';
 import { sha256 } from '@quanxiaoxiao/node-utils';
 import shelljs from 'shelljs';
 
+import calcHash from './calcHash.mjs';
 import listResources from './listResources.mjs';
 import storeProjectResources from './storeProjectResources.mjs';
-import { calcHash } from './utils.mjs';
 
 const calcHash2 = (hashList) => {
   return [...hashList].sort((a, b) => {

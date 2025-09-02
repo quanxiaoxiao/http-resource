@@ -4,9 +4,9 @@ import path from 'node:path';
 import process from 'node:process';
 import test from 'node:test';
 
+import calcHash from './calcHash.mjs';
 import listResources from './listResources.mjs';
 import readProjectResources from './readProjectResources.mjs';
-import { calcHash } from './utils.mjs';
 
 test('readProjectResources', () => {
   let ret = readProjectResources({

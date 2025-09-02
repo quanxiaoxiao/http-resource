@@ -6,9 +6,9 @@ import { sha256 } from '@quanxiaoxiao/node-utils';
 import mime from 'mime';
 import shelljs from 'shelljs';
 
+import calcHash from './calcHash.mjs';
 import parseHtml from './html/parseHtml.mjs';
 import listResources from './listResources.mjs';
-import { calcHash } from './utils.mjs';
 
 export default (projectItem) => {
   const defaultResult = {

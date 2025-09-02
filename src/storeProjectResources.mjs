@@ -5,8 +5,8 @@ import path from 'node:path';
 import Ajv from 'ajv';
 import shelljs from 'shelljs';
 
+import calcHash from './calcHash.mjs';
 import listResources from './listResources.mjs';
-import { calcHash } from './utils.mjs';
 
 const ajv = new Ajv();
 

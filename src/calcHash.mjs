@@ -1,6 +1,6 @@
 import { sha256 } from '@quanxiaoxiao/node-utils';
 
-export const calcHash = (bufList) => {
+export default (bufList) => {
   if (!bufList.length) return '';
 
   return bufList
