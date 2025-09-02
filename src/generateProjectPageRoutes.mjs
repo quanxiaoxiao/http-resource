@@ -13,8 +13,8 @@ export default (
   getProject,
 ) => {
   const routes = {};
-  for (let i = 0; i < list.length; i++) {
-    const projectItem = list[i];
+
+  list.forEach((projectItem) => {
     for (let j = 0; j < projectItem.list.length; j++) {
       routes[projectItem.list[j]] = {
         get: async (ctx) => {
@@ -83,7 +83,7 @@ export default (
         },
       };
     }
-  }
+  });
 
   return routes;
 };
