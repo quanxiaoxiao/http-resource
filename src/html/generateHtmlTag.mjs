@@ -1,7 +1,4 @@
-export default (
-  name,
-  props = {},
-) => {
+export default (name, props = {}) => {
   const {
     attributes,
     content,
@@ -9,8 +6,10 @@ export default (
   if (!name) {
     return '';
   }
+
+  const hasContentProp = Object.hasOwnProperty.call(props, 'content');
   if (!attributes || attributes.length === 0) {
-    if (!Object.hasOwnProperty.call(props, 'content')) {
+    if (!hasContentProp) {
       return `<${name}>`;
     }
     return `<${name}>${content ?? ''}</${name}>`;
@@ -22,7 +21,7 @@ export default (
     result += attrItem.value == null ? attrItem.name : `${attrItem.name}="${attrItem.value}"`;
   }
   result += '>';
-  if (Object.hasOwnProperty.call(props, 'content')) {
+  if (hasContentProp) {
     if (content != null) {
       result += content;
     }
