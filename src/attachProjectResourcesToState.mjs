@@ -35,6 +35,22 @@ const validate = ajv.compile({
   required: ['routes', 'key'],
 });
 
+const readProjectConfig = (projectConfigPathname) => {
+  try {
+    const data = fs.readFileSync(projectConfigPathname, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.warn(`[${codeName}] Failed to read/parse project config: ${error.message}`);
+    return null;
+  }
+};
+
+const ensureResourceStoreDir = (resourceStorePathname) => {
+  if (!shelljs.test('-d', resourceStorePathname)) {
+    shelljs.mkdir('-p', resourceStorePathname);
+  }
+};
+
 export default (state, keyname = 'projectResources') => {
   assert(_.isPlainObject(state), 'State must be a plain object');
   assert(typeof keyname === 'string', 'Keyname must be a string');
@@ -51,22 +67,22 @@ export default (state, keyname = 'projectResources') => {
       return state;
     }
 
+    const configData = readProjectConfig(resolvedProjectConfigPathname);
+    if (!configData) {
+      return state;
+    }
+
+    ensureResourceStoreDir(resourceStorePathname);
+
     const projectResources = {};
-    try {
-      const data = JSON.parse(fs.readFileSync(resolvedProjectConfigPathname));
-      if (!shelljs.test('-d', resourceStorePathname)) {
-        console.warn(`[${codeName}] create dir \`${resourceStorePathname}\``);
-        shelljs.mkdir('-p', resourceStorePathname);
-      }
-      const projectNameList = Object.keys(data);
-      for (let i = 0; i < projectNameList.length; i++) {
-        const projectName = projectNameList[i];
-        const projectItem = data[projectName];
-        if (!validate(projectItem)) {
-          console.warn(`[${codeName}] \`${projectName}\` project invalid ${JSON.stringify(validate.errors)}`);
-          continue;
-        }
-        projectResources[projectName] = {
+    const projectNameList = Object.keys(configData);
+
+    for (const projectName of projectNameList) {
+      const projectItem = configData[projectName];
+      if (!validate(projectItem)) {
+        console.warn(`[${codeName}] Project "${projectName}" is invalid: ${JSON.stringify(validate.errors)}`);
+      } else {
+        const projectResource = {
           ...projectItem,
           name: projectName,
           key: projectItem.key,
@@ -78,13 +94,12 @@ export default (state, keyname = 'projectResources') => {
           dir: path.join(resourceStorePathname, projectName),
           title: projectItem.title || '',
         };
-        projectResources[projectName].resource = readProjectResources(projectResources[projectName]);
+        projectResource.resource = readProjectResources(projectResource);
+        projectResources[projectName] = projectResource;
       }
-      state[keyname] = projectResources;
-    } catch (error) {
-      console.warn(`[${codeName}] ${error.message}`);
-      return state;
     }
+
+    state[keyname] = projectResources;
     return state;
   };
 };
