@@ -1,4 +1,4 @@
-export default (name, props = {}) => {
+export default (name, props = {}, isCloseAtNoContent = false) => {
   const {
     attributes,
     content,
@@ -10,7 +10,7 @@ export default (name, props = {}) => {
   const hasContentProp = Object.hasOwnProperty.call(props, 'content');
   if (!attributes || attributes.length === 0) {
     if (!hasContentProp) {
-      return `<${name}>`;
+      return isCloseAtNoContent ? `<${name} />` : `<${name}>`;
     }
     return `<${name}>${content ?? ''}</${name}>`;
   }
@@ -20,12 +20,12 @@ export default (name, props = {}) => {
     result += ' ';
     result += attrItem.value == null ? attrItem.name : `${attrItem.name}="${attrItem.value}"`;
   }
-  result += '>';
-  if (hasContentProp) {
-    if (content != null) {
-      result += content;
-    }
-    result += `</${name}>`;
+  if (!hasContentProp) {
+    return isCloseAtNoContent ? `${result} />` : `${result}>`;
   }
-  return result;
+  result += '>';
+  if (content != null) {
+    result += content;
+  }
+  return `${result}</${name}>`;
 };

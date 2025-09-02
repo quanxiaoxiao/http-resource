@@ -18,18 +18,18 @@ const renderLines = (lines, depth = 0) => {
   }, '');
 };
 
-const createTagArray = (items, tagName, mapFn) => {
+const createTagArray = (items, mapFn) => {
   return _.isEmpty(items) ? [] : [items.map(mapFn)];
 };
 
 export default ({
   title = '',
-  documentAttributeList = [],
   metaList = [],
   linkList = [],
   styleList = [],
   scriptList = [],
   elemList = [],
+  documentAttributeList = [],
   bodyAttributeList = [],
 }) => {
   const result = [];
@@ -46,23 +46,32 @@ export default ({
 
   head.push(...createTagArray(
     metaList,
-    'meta',
-    (item) => generateHtmlTag('meta', { attributes: item.attributes }),
+    (item) => generateHtmlTag(
+      'meta',
+      { attributes: item.attributes },
+      true,
+    ),
   ));
 
   head.push(...createTagArray(
     styleList,
-    'style',
-    (item) => generateHtmlTag('style', {
-      content: item.content,
-      attributes: item.attributes,
-    }),
+    (item) => generateHtmlTag(
+      'style',
+      {
+        content: item.content,
+        attributes: item.attributes,
+      },
+      true,
+    ),
   ));
 
   head.push(...createTagArray(
     linkList,
-    'link',
-    (item) => generateHtmlTag('link', { attributes: item.attributes }),
+    (item) => generateHtmlTag(
+      'link',
+      { attributes: item.attributes },
+      true,
+    ),
   ));
 
   head.push('</head>');
@@ -71,7 +80,6 @@ export default ({
 
   body.push(...createTagArray(
     elemList,
-    'element',
     (item) => generateHtmlTag(item.name, {
       content: item.content,
       attributes: item.attributes,
@@ -80,13 +88,15 @@ export default ({
 
   body.push(...createTagArray(
     scriptList,
-    'script',
     (item) => generateHtmlTag('script', {
       content: item.content,
       attributes: item.attributes,
     }),
   ));
+
   body.push('</body>');
+
   result.push(head, body);
+
   return `${renderLines(result)}</html>`;
 };

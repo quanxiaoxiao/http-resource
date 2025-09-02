@@ -26,7 +26,7 @@ test('renderToHtml', () => {
   content = `<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
   </head>
   <body>
   </body>
@@ -46,8 +46,8 @@ test('renderToHtml', () => {
   content = `<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   </head>
   <body>
   </body>
@@ -81,9 +81,9 @@ test('renderToHtml', () => {
 <html>
   <head>
     <title>bbb</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-    <link rel="dns-prefetch" href="//test.aaa.com">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+    <link rel="dns-prefetch" href="//test.aaa.com" />
   </head>
   <body>
   </body>
@@ -130,7 +130,7 @@ test('renderToHtml', () => {
   content = `<!DOCTYPE html>
 <html lang="zh">
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
   </head>
   <body id="root">
   </body>
@@ -162,7 +162,7 @@ test('renderToHtml', () => {
   content = `<!DOCTYPE html>
 <html lang="zh">
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
   </head>
   <body>
     <div id="root"></div>

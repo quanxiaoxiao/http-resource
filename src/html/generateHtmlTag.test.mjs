@@ -6,6 +6,7 @@ import generateHtmlTag from './generateHtmlTag.mjs';
 test('generateHtmlTag', () => {
   assert.equal(generateHtmlTag(''), '');
   assert.equal(generateHtmlTag('a'), '<a>');
+  assert.equal(generateHtmlTag('a', {}, true), '<a />');
   assert.equal(
     generateHtmlTag('a', {
       content: '',
@@ -21,6 +22,10 @@ test('generateHtmlTag', () => {
   assert.equal(
     generateHtmlTag('head'),
     '<head>',
+  );
+  assert.equal(
+    generateHtmlTag('head', {}, true),
+    '<head />',
   );
   assert.equal(
     generateHtmlTag('a', {
@@ -50,6 +55,21 @@ test('generateHtmlTag', () => {
       ],
     }),
     '<a data-foo="bar">',
+  );
+  assert.equal(
+    generateHtmlTag(
+      'a',
+      {
+        attributes: [
+          {
+            name: 'data-foo',
+            value: 'bar',
+          },
+        ],
+      },
+      true,
+    ),
+    '<a data-foo="bar" />',
   );
   assert.equal(
     generateHtmlTag('html', {}),
