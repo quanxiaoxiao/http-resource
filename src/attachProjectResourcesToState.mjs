@@ -36,18 +36,24 @@ const validate = ajv.compile({
 });
 
 export default (state, keyname = 'projectResources') => {
-  assert(_.isPlainObject(state));
-  return (_projectConfigPathname, _resourcePathname = './dist') => {
-    assert(/\.json$/.test(_projectConfigPathname));
-    const projectConfigPathname = getPathname(_projectConfigPathname);
-    const resourceStorePathname = getPathname(_resourcePathname);
-    if (!shelljs.test('-f', projectConfigPathname)) {
-      console.warn(`[${codeName}] \`${projectConfigPathname}\` not found`);
+  assert(_.isPlainObject(state), 'State must be a plain object');
+  assert(typeof keyname === 'string', 'Keyname must be a string');
+
+  return (projectConfigPathname, resourcePathname = './dist') => {
+    assert(typeof projectConfigPathname === 'string', 'Project config pathname must be a string');
+    assert(/\.json$/.test(projectConfigPathname, 'Project config file must have .json extension'));
+
+    const resolvedProjectConfigPathname = getPathname(projectConfigPathname);
+    const resourceStorePathname = getPathname(resourcePathname);
+
+    if (!shelljs.test('-f', resolvedProjectConfigPathname)) {
+      console.warn(`[${codeName}] Project config file "${resolvedProjectConfigPathname}" not found`);
       return state;
     }
+
     const projectResources = {};
     try {
-      const data = JSON.parse(fs.readFileSync(projectConfigPathname));
+      const data = JSON.parse(fs.readFileSync(resolvedProjectConfigPathname));
       if (!shelljs.test('-d', resourceStorePathname)) {
         console.warn(`[${codeName}] create dir \`${resourceStorePathname}\``);
         shelljs.mkdir('-p', resourceStorePathname);
