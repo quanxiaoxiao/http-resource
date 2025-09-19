@@ -43,7 +43,7 @@ export default (
           if (!hasHttpBodyContent(ctx.request.headers)) {
             throw createError(403);
           }
-          if (logger) {
+          if (logger?.warn) {
             logger.warn(`\`project:${projectItem.name}\` will update resources...`);
           }
           const resourceTempDir = path.resolve(projectItem.dir, projectItem.tempDirName);
@@ -68,7 +68,7 @@ export default (
         if (!ret) {
           throw createError(500);
         }
-        if (logger) {
+        if (logger?.warn) {
           logger.warn(`\`project:${projectItem.name}\` update resources success, \`size:${ret.size}\` \`hash:${ret.hash}\``);
         }
         ctx.response = {

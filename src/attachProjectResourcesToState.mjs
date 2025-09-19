@@ -1,7 +1,6 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import url from 'node:url';
 
 import { getPathname } from '@quanxiaoxiao/node-utils';
 import Ajv from 'ajv';
@@ -9,8 +8,6 @@ import _ from 'lodash';
 import shelljs from 'shelljs';
 
 import readProjectResources from './readProjectResources.mjs';
-
-const codeName = path.basename(url.fileURLToPath(import.meta.url), '.mjs');
 
 const ajv = new Ajv();
 
@@ -40,7 +37,7 @@ const readProjectConfig = (projectConfigPathname) => {
     const data = fs.readFileSync(projectConfigPathname, 'utf8');
     return JSON.parse(data);
   } catch (error) {
-    console.warn(`[${codeName}] Failed to read/parse project config: ${error.message}`);
+    console.warn(`Failed to read/parse project config: ${error.message}`);
     return null;
   }
 };
@@ -63,7 +60,7 @@ export default (state, keyname = 'projectResources') => {
     const resourceStorePathname = getPathname(resourcePathname);
 
     if (!shelljs.test('-f', resolvedProjectConfigPathname)) {
-      console.warn(`[${codeName}] Project config file "${resolvedProjectConfigPathname}" not found`);
+      console.warn(`Project config file "${resolvedProjectConfigPathname}" not found`);
       return state;
     }
 
@@ -80,7 +77,7 @@ export default (state, keyname = 'projectResources') => {
     for (const projectName of projectNameList) {
       const projectItem = configData[projectName];
       if (!validate(projectItem)) {
-        console.warn(`[${codeName}] Project "${projectName}" is invalid: ${JSON.stringify(validate.errors)}`);
+        console.warn(`Project "${projectName}" is invalid: ${JSON.stringify(validate.errors)}`);
       } else {
         const projectResource = {
           ...projectItem,

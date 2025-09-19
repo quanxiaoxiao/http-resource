@@ -2,19 +2,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 
+import { htmlToJson } from '@quanxiaoxiao/html-helper';
 import { sha256 } from '@quanxiaoxiao/node-utils';
 import mime from 'mime';
 import shelljs from 'shelljs';
 
 import calcHash from './calcHash.mjs';
-import parseHtml from './html/parseHtml.mjs';
 import listResources from './listResources.mjs';
 
 export default (projectItem) => {
   const defaultResult = {
     hash: null,
     size: 0,
-    pageInfo: null,
+    pageAst: null,
     list: [],
   };
 
@@ -32,6 +32,7 @@ export default (projectItem) => {
   }
 
   const resources = [];
+
   for (let i = 0; i < resourcePathnameList.length; i++) {
     const resourcePathname = resourcePathnameList[i];
     const buf = fs.readFileSync(resourcePathname);
@@ -44,12 +45,13 @@ export default (projectItem) => {
       pathname: resourcePathname.slice(resourceCurrentDir.length + 1),
     });
   }
+
   const indexHtml = resources.find((d) => d.pathname === 'index.html');
   const totalSize = resources.reduce((acc, cur) => acc + cur.buf.length, 0);
   return {
     hash: calcHash(resources.map((d) => d.buf)),
     size: totalSize,
-    pageInfo: indexHtml ? parseHtml(indexHtml.buf) : null,
+    pageAst: indexHtml ? JSON.stringify(htmlToJson(indexHtml.buf.toString())) : null,
     list: resources,
   };
 };
