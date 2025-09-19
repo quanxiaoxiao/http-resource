@@ -12,6 +12,93 @@ import { encodeContentEncoding } from '@quanxiaoxiao/http-utils';
 import createError from 'http-errors';
 import _ from 'lodash';
 
+const initializeState = (ctx) => {
+  if (!ctx.state) {
+    ctx.state = {};
+  }
+};
+
+const mergeProjectData = (ctx, projectItem) => {
+  if (!_.isPlainObject(projectItem.data)) {
+    return;
+  }
+
+  initializeState(ctx);
+  Object.assign(ctx.state, projectItem.data);
+};
+
+const fetchAndMergeApiData = async (ctx, projectItem, hosts) => {
+  if (_.isEmpty(projectItem.api)) {
+    return;
+  }
+
+  try {
+    const apiResult = await fetchActions(projectItem.api)({
+      hosts,
+      request: ctx.request,
+    });
+
+    if (_.isPlainObject(apiResult)) {
+      initializeState(ctx);
+      Object.assign(ctx.state, apiResult);
+    }
+  } catch (error) {
+    console.error(`API fetch failed for project "${projectItem.name}":`, error);
+    throw createError(502);
+  }
+};
+
+const buildPageAst = (projectItem, ctx, onPageRender) => {
+  let pageAst;
+
+  try {
+    pageAst = JSON.parse(projectItem.resource.pageAst);
+  } catch (error) {
+    console.error(`Invalid page AST for project "${projectItem.name}":`, error);
+    throw createError(500);
+  }
+
+  setCharset(pageAst, 'utf-8');
+  setViewport(pageAst);
+
+  if (projectItem.title) {
+    setTitle(pageAst, projectItem.title);
+  }
+
+  if (ctx.state && !_.isEmpty(ctx.state)) {
+    const stateScript = `window.__STATE__=${JSON.stringify(ctx.state)};`;
+    insertInlineScript(pageAst, stateScript);
+  }
+
+  if (onPageRender && typeof onPageRender === 'function') {
+    onPageRender(ctx, pageAst);
+  }
+
+  return pageAst;
+};
+
+const generateResponse = (pageAst, request) => {
+  const content = `<!DOCTYPE html>${jsonToHtml(pageAst)}`;
+  const contentBuf = Buffer.from(content, 'utf8');
+
+  const acceptEncoding = request.headers['accept-encoding'] || '';
+  const encodedContentResult = encodeContentEncoding(contentBuf, acceptEncoding);
+
+  const headers = {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Length': encodedContentResult.buf.length,
+  };
+
+  if (encodedContentResult.name) {
+    headers['Content-Encoding'] = encodedContentResult.name;
+  }
+
+  return {
+    headers,
+    body: encodedContentResult.buf,
+  };
+};
+
 const createRouteHandler = (
   projectName,
   hosts,
@@ -26,50 +113,23 @@ const createRouteHandler = (
     console.warn(`Project "${projectItem.name}" page ast is not configured`);
     throw createError(403);
   }
-  if (_.isPlainObject(projectItem.data)) {
-    if (!ctx.state) {
-      ctx.state = {};
-    }
-    Object.assign(ctx.state, projectItem.data);
-  }
+  try {
+    mergeProjectData(ctx, projectItem);
 
-  if (!_.isEmpty(projectItem.api)) {
-    const apiResult = await fetchActions(projectItem.api)({
-      hosts,
-      request: ctx.request,
-    });
-    if (_.isPlainObject(apiResult)) {
-      if (!ctx.state) {
-        ctx.state = {};
-      }
-      Object.assign(ctx.state, apiResult);
-    }
-  }
-  const pageAst = JSON.parse(projectItem.resource.pageAst);
-  setCharset(pageAst, 'utf-8');
-  setViewport(pageAst);
-  if (projectItem.title) {
-    setTitle(pageAst, projectItem.title);
-  }
-  if (ctx.state) {
-    insertInlineScript(pageAst, `window.__STATE__=${JSON.stringify(ctx.state)};`);
-  }
-  if (onPageRender) {
-    onPageRender(ctx, pageAst);
-  }
-  const content = `<!DOCTYPE html>${jsonToHtml(pageAst)}`;
-  const contentBuf = Buffer.from(content);
-  const encodedContentResult = encodeContentEncoding(contentBuf, ctx.request.headers['accept-encoding']);
+    await fetchAndMergeApiData(ctx, projectItem, hosts);
 
-  ctx.response = {
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      ...encodedContentResult.name ? {
-        'Content-Encoding': encodedContentResult.name,
-      } : {},
-    },
-    body: encodedContentResult.buf,
-  };
+    const pageAst = buildPageAst(projectItem, ctx, onPageRender);
+
+    ctx.response = generateResponse(pageAst, ctx.request);
+
+  } catch (error) {
+    if (error.status) {
+      throw error;
+    }
+
+    console.error(`Unexpected error in route handler for project "${projectName}":`, error);
+    throw createError(500);
+  }
 };
 
 export default (
