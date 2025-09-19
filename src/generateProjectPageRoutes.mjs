@@ -80,11 +80,41 @@ export default (
   },
   getProject,
 ) => {
+  if (!Array.isArray(list)) {
+    throw new Error('Project list must be an array');
+  }
+
+  if (typeof getProject !== 'function') {
+    throw new Error('getProject must be a function');
+  }
+
   const routes = {};
 
-  list.forEach((projectItem) => {
-    projectItem.list.forEach((route) => {
-      routes[route] = {
+  list.forEach((projectItem, index) => {
+    if (!projectItem || typeof projectItem !== 'object') {
+      console.warn(`Invalid project item at index ${index}, skipping`);
+      return;
+    }
+    if (!projectItem.name) {
+      console.warn(`Project item at index ${index} missing name, skipping`);
+      return;
+    }
+
+    if (!Array.isArray(projectItem.list)) {
+      console.warn(`Project "${projectItem.name}" routes list is not an array, skipping`);
+      return;
+    }
+
+    projectItem.list.forEach((route, routeIndex) => {
+      if (typeof route !== 'string' || !route.trim()) {
+        console.warn(`Invalid route at index ${routeIndex} for project "${projectItem.name}", skipping`);
+        return;
+      }
+      const normalizedRoute = route.trim();
+      if (routes[normalizedRoute]) {
+        console.warn(`Route "${normalizedRoute}" already exists, overwriting`);
+      }
+      routes[normalizedRoute] = {
         get: createRouteHandler(projectItem.name, hosts, onPageRender, getProject),
       };
     });
