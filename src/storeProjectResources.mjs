@@ -139,6 +139,7 @@ export default (projectItem) => {
   const tempFiles = listResources(resourceTempDir);
   if (tempFiles.length === 0) {
     console.warn(`No files found in temporary directory: ${resourceTempDir}`);
+    shelljs.rm('-rf', resourceTempDir);
     return null;
   }
   const resourceBuffers = tempFiles.map((filePath) => fs.readFileSync(filePath));

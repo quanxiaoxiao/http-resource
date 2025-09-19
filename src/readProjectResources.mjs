@@ -15,6 +15,7 @@ export default (projectItem) => {
     hash: null,
     size: 0,
     pageAst: null,
+    dateTimeUpdate: null,
     list: [],
   };
 
@@ -26,6 +27,9 @@ export default (projectItem) => {
     return defaultResult;
   }
   const resourcePathnameList = listResources(resourceCurrentDir);
+  const stats = fs.statSync(resourceCurrentDir);
+  const dateTimeUpdate = Math.round(stats.mtimeMs);
+  defaultResult.dateTimeUpdate = dateTimeUpdate;
 
   if (!resourcePathnameList.length) {
     return defaultResult;
@@ -48,10 +52,12 @@ export default (projectItem) => {
 
   const indexHtml = resources.find((d) => d.pathname === 'index.html');
   const totalSize = resources.reduce((acc, cur) => acc + cur.buf.length, 0);
+  const pageAst = indexHtml ? htmlToJson(indexHtml.buf.toString()) : null;
   return {
     hash: calcHash(resources.map((d) => d.buf)),
     size: totalSize,
-    pageAst: indexHtml ? JSON.stringify(htmlToJson(indexHtml.buf.toString())) : null,
+    pageAst: pageAst ? JSON.stringify(pageAst) : null,
+    dateTimeUpdate,
     list: resources,
   };
 };

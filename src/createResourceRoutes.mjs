@@ -66,7 +66,7 @@ export default (
         await waitFor(TEMP_DIR_CLEANUP_DELAY);
         const ret = storeProjectResources(projectItem);
         if (!ret) {
-          throw createError(500);
+          throw createError(403);
         }
         if (logger?.warn) {
           logger.warn(`\`project:${projectItem.name}\` update resources success, \`size:${ret.size}\` \`hash:${ret.hash}\``);

@@ -36,6 +36,7 @@ test('readProjectResources', () => {
     ret,
     {
       hash: null,
+      dateTimeUpdate: null,
       pageAst: null,
       size: 0,
       list: [],
