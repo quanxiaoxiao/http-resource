@@ -62,7 +62,7 @@ export default (
         }
       },
       post: async (ctx) => {
-        const projectItem = getProject(ctx.request.params.name);
+        const projectItem = getProject(ctx.request.params.name, ctx.request.query.message ?? '');
         await waitFor(TEMP_DIR_CLEANUP_DELAY);
         const ret = storeProjectResources(projectItem);
         if (!ret) {

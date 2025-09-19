@@ -21,6 +21,10 @@ const validate = ajv.compile({
       size: {
         type: 'number',
       },
+      description: {
+        type: 'string',
+        nullable: true,
+      },
       dateTimeCreate: {
         type: 'number',
       },
@@ -111,6 +115,7 @@ const scanAndUpdateMetadata = (
         hash,
         size: bufList.reduce((acc, buf) => acc + buf.length, 0),
         dateTimeCreate: Math.round(stats.ctimeMs),
+        description: '',
       });
     }
   }
@@ -118,7 +123,7 @@ const scanAndUpdateMetadata = (
   return updatedMetaData;
 };
 
-export default (projectItem) => {
+export default (projectItem, description) => {
   const metaPathname = path.resolve(projectItem.dir, projectItem.metaFileName);
   const resourceTempDir = path.resolve(projectItem.dir, projectItem.tempDirName);
   const resourceCurrentDir = path.resolve(projectItem.dir, projectItem.currentDirName);
@@ -153,6 +158,7 @@ export default (projectItem) => {
       hash: projectResourcesHash,
       size: resourceBuffers.reduce((acc, buf) => acc + buf.length, 0),
       dateTimeCreate: Date.now(),
+      description,
     });
   }
 
