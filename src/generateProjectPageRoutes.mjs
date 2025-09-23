@@ -13,9 +13,7 @@ import createError from 'http-errors';
 import _ from 'lodash';
 
 const initializeState = (ctx) => {
-  if (!ctx.state) {
-    ctx.state = {};
-  }
+  ctx.state ??= {};
 };
 
 const mergeProjectData = (ctx, projectItem) => {
@@ -48,7 +46,7 @@ const fetchAndMergeApiData = async (ctx, projectItem, hosts) => {
   }
 };
 
-const buildPageAst = (projectItem, ctx, onPageRender) => {
+const buildPageAst = (projectItem, ctx) => {
   let pageAst;
 
   try {
@@ -70,33 +68,27 @@ const buildPageAst = (projectItem, ctx, onPageRender) => {
     insertInlineScript(pageAst, stateScript);
   }
 
-  if (onPageRender && typeof onPageRender === 'function') {
-    onPageRender(ctx, pageAst);
-  }
-
   return pageAst;
 };
 
-const generateResponse = (pageAst, request) => {
-  const content = `<!DOCTYPE html>${jsonToHtml(pageAst)}`;
+const processResponse = (ctx) => {
+  const content = `<!DOCTYPE html>${jsonToHtml(ctx.response.pageAst)}`;
   const contentBuf = Buffer.from(content, 'utf8');
 
-  const acceptEncoding = request.headers['accept-encoding'] || '';
+  const acceptEncoding = ctx.request.headers['accept-encoding'] || '';
   const encodedContentResult = encodeContentEncoding(contentBuf, acceptEncoding);
 
-  const headers = {
+  ctx.response.headers ??= {};
+  Object.assign(ctx.response.headers, {
     'Content-Type': 'text/html; charset=utf-8',
     'Content-Length': encodedContentResult.buf.length,
-  };
+  });
 
   if (encodedContentResult.name) {
-    headers['Content-Encoding'] = encodedContentResult.name;
+    ctx.response.headers['Content-Encoding'] = encodedContentResult.name;
   }
 
-  return {
-    headers,
-    body: encodedContentResult.buf,
-  };
+  ctx.response.body = encodedContentResult.buf;
 };
 
 const createRouteHandler = (
@@ -118,9 +110,17 @@ const createRouteHandler = (
 
     await fetchAndMergeApiData(ctx, projectItem, hosts);
 
-    const pageAst = buildPageAst(projectItem, ctx, onPageRender);
+    const pageAst = buildPageAst(projectItem, ctx);
 
-    ctx.response = generateResponse(pageAst, ctx.request);
+    ctx.response = {
+      pageAst,
+    };
+
+    if (onPageRender && typeof onPageRender === 'function') {
+      onPageRender(ctx);
+    }
+
+    processResponse(ctx);
 
   } catch (error) {
     if (error.status) {
