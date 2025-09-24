@@ -72,7 +72,10 @@ const buildPageAst = (projectItem, ctx) => {
 };
 
 const processResponse = (ctx) => {
-  const content = `<!DOCTYPE html>${jsonToHtml(ctx.response.pageAst)}`;
+  if (!ctx.pageAst) {
+    throw createError(403);
+  }
+  const content = `<!DOCTYPE html>${jsonToHtml(ctx.pageAst)}`;
   const contentBuf = Buffer.from(content, 'utf8');
 
   const acceptEncoding = ctx.request.headers['accept-encoding'] || '';
@@ -110,14 +113,13 @@ const createRouteHandler = (
 
     await fetchAndMergeApiData(ctx, projectItem, hosts);
 
-    const pageAst = buildPageAst(projectItem, ctx);
+    ctx.projectName = projectName;
+    ctx.pageAst = buildPageAst(projectItem, ctx);
 
-    ctx.response = {
-      pageAst,
-    };
+    ctx.response = {};
 
     if (onPageRender && typeof onPageRender === 'function') {
-      onPageRender(ctx);
+      await onPageRender(ctx);
     }
 
     processResponse(ctx);
